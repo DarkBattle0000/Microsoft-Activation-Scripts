@@ -1,0 +1,84 @@
+@echo off
+>nul 2>&1 "%SYSTEMROOT%\system32\icacls.exe" "%SYSTEMROOT%\system32\config\system"
+if '%errorlevel%' NEQ '0' (
+    echo Error: this script needs administrator privileges.
+    echo Please run as administrator and try again.
+    pause
+    exit /b
+)
+
+title Activating Microsoft Office 2021
+cls
+echo ==================================
+echo  Activating Microsoft Office 2021
+echo ==================================
+echo.
+echo # Supported Products:
+echo - Microsoft Office Standard 2021
+echo - Microsoft Office Professional Plus 2021
+echo.
+echo.
+
+(if exist "%ProgramFiles%\Microsoft Office\Office16\ospp.vbs" cd /d "%ProgramFiles%\Microsoft Office\Office16")
+(if exist "%ProgramFiles(x86)%\Microsoft Office\Office16\ospp.vbs" cd /d "%ProgramFiles(x86)%\Microsoft Office\Office16")
+
+(for /f %%x in ('dir /b ..\root\Licenses16\ProPlus2021VL_KMS*.xrm-ms') do cscript ospp.vbs /inslic:"..\root\Licenses16\%%x" >nul)
+
+echo.
+echo =======================
+echo      Activating...
+cscript //nologo slmgr.vbs /ckms >nul
+cscript //nologo ospp.vbs /setprt:1688 >nul
+cscript //nologo ospp.vbs /unpkey:6F7TH >nul
+set i=1
+cscript //nologo ospp.vbs /inpkey:FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH >nul||goto notsupported
+
+:skms
+if %i% GTR 10 goto allfailed
+if %i% EQU 1 set KMS=e8.us.to
+if %i% EQU 2 set KMS=e9.us.to
+if %i% GTR 2 goto ato
+cscript //nologo ospp.vbs /sethst:%KMS% >nul
+
+:ato
+echo =======================
+echo.
+
+cscript //nologo ospp.vbs /act | find /i "successful" >nul
+if %errorlevel%==0 (
+    echo Successfully activated! Activation performed via server. %KMS%.
+    echo.
+    echo closing in 5 seconds.
+    timeout /t 5 >nul
+    goto end
+) else (
+    echo Activation failed! %KMS%. Starting attempt on another server...
+    echo.
+    set /a i+=1
+    goto skms
+)
+
+:allfailed
+echo =====================================================================================
+echo.
+echo Activation failed! All servers are down. Please try again later
+echo.
+echo Press the Enter key to exit.
+echo.
+pause >nul
+goto halt
+
+:notsupported
+echo =====================================================================================
+echo.
+echo Incompatible version of microsoft Office
+echo.
+echo Press the Enter key to exit.
+echo.
+pause >nul
+goto halt
+
+:halt
+pause >nul
+
+:end
